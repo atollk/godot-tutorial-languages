@@ -9,7 +9,7 @@ class Player: Area2D {
 
     @Node("CollisionShape2D") private var collisionShape2D: CollisionShape2D
     @Node("AnimatedSprite2D") private var playerAnimatedSprite: PlayerAnimatedSprite
-    @Node("CollisionShape2D") private var gpuParticles2D: GPUParticles2D
+    @Node("GPUParticles2D") private var gpuParticles2D: GPUParticles2D
 
     func start(position: Vector2) {
         self.position = position

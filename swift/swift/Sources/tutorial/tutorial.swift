@@ -5,7 +5,7 @@ import SwiftGodot
 
 #initSwiftExtension(
     cdecl: "swift_entry_point",
-    types: [Player.self],
+    types: [Player.self, Main.self, Mob.self, Hud.self, PlayerAnimatedSprite.self],
 )
 
 extension Comparable {

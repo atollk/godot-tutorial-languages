@@ -1,6 +1,5 @@
-[gd_scene load_steps=8 format=4 uid="uid://c7crc8njsh0hg"]
+[gd_scene load_steps=7 format=4 uid="uid://c7crc8njsh0hg"]
 
-[ext_resource type="PackedScene" uid="uid://dx8njijl1u00p" path="res://mob.tscn" id="1_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://0j037gwlvc8o" path="res://player.tscn" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://bdvruacb3hqcd" path="res://hud.tscn" id="4_1bvp3"]
 [ext_resource type="AudioStream" uid="uid://i1vc1awejajj" path="res://dodge_the_creeps_2d_assets/art/gameover.wav" id="5_lquwl"]
@@ -21,17 +20,6 @@ packet_sequence = SubResource("OggPacketSequence_najso")
 loop = true
 
 [node name="Main" type="Main"]
-_import_path = NodePath("")
-unique_name_in_owner = false
-process_mode = 0
-process_priority = 0
-process_physics_priority = 0
-process_thread_group = 0
-physics_interpolation_mode = 0
-auto_translate_mode = 0
-editor_description = ""
-mob_scene = ExtResource("1_1bvp3")
-script = null
 
 [node name="ColorRect" type="ColorRect" parent="."]
 anchors_preset = 15
@@ -64,16 +52,6 @@ curve = SubResource("Curve2D_ig7tw")
 [node name="MobSpawnLocation" type="PathFollow2D" parent="MobPath"]
 
 [node name="HUD" parent="." instance=ExtResource("4_1bvp3")]
-_import_path = NodePath("")
-unique_name_in_owner = false
-process_mode = 0
-process_priority = 0
-process_physics_priority = 0
-process_thread_group = 0
-physics_interpolation_mode = 0
-auto_translate_mode = 0
-editor_description = ""
-script = null
 
 [node name="Music" type="AudioStreamPlayer2D" parent="."]
 stream = SubResource("AudioStreamOggVorbis_7mycd")
