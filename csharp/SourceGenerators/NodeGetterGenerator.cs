@@ -44,93 +44,95 @@ public readonly record struct GenerationVerification(string ClassName, string No
     }
 }
 
-public readonly record struct GetterToGenerate(
-    string NodeType,
+public readonly record struct PropertyGetterToGenerate(
+    string PropertyName,
+    string PropertyType,
     string NodePath,
     bool IsCached,
-    string ClassName
+    string ClassName,
+    string AccessModifier
 )
 {
-    public readonly string NodeType = NodeType;
+    public readonly string PropertyName = PropertyName;
+    public readonly string PropertyType = PropertyType;
     public readonly string NodePath = NodePath;
     public readonly bool IsCached = IsCached;
     public readonly string ClassName = ClassName;
+    public readonly string AccessModifier = AccessModifier;
 
-    public string MethodName => "GetNode" + ConvertPathToMethodName(NodePath);
+    public string BackingFieldName =>
+        $"_{char.ToLowerInvariant(PropertyName[0])}{PropertyName.Substring(1)}";
 
-    private static string ConvertPathToMethodName(string path)
-    {
-        // Simple conversion: remove non-alphanumeric characters and capitalize first letter
-        var sb = new StringBuilder();
-        var capitalizeNext = true;
-
-        foreach (var c in path)
-        {
-            if (char.IsLetterOrDigit(c))
-            {
-                sb.Append(capitalizeNext ? char.ToUpper(c) : c);
-                capitalizeNext = false;
-            }
-            else
-            {
-                capitalizeNext = true;
-            }
-        }
-
-        return sb.ToString();
-    }
-
-    public static GetterToGenerate? FromAttribute(
+    public static PropertyGetterToGenerate? FromPropertyNode(
         SemanticModel semanticModel,
         INamedTypeSymbol classSymbol,
-        AttributeSyntax attributeSyntax
+        PropertyDeclarationSyntax propertySyntax
     )
     {
+        // Check if property has a Node attribute
+        var nodeAttribute = propertySyntax
+            .AttributeLists.SelectMany(al => al.Attributes)
+            .FirstOrDefault(a => IsNodeAttribute(semanticModel, a));
+
+        if (nodeAttribute?.ArgumentList == null)
+            return null;
+
+        // Get the nodePath from the attribute
+        if (nodeAttribute.ArgumentList?.Arguments.Count < 1)
+            return null;
+
         if (
-            semanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol
+            semanticModel
+                .GetConstantValue(nodeAttribute.ArgumentList!.Arguments[0].Expression)
+                .Value
+            is not string nodePath
         )
             return null;
 
-        var attributeContainingTypeSymbol = attributeSymbol.ContainingType;
-        var fullName = attributeContainingTypeSymbol.ToDisplayString();
-
-        // Is this the GenerateNodeGetter attribute?
-        if (fullName != "NodeGetterGenerators.GenerateNodeGetterAttribute")
-            return null;
-
-        // Get the attribute constructor arguments
-        if (attributeSyntax.ArgumentList == null)
-            return null;
-        var arguments = attributeSyntax.ArgumentList.Arguments;
-        if (arguments.Count is < 2 or > 3)
-            return null;
-
-        // Handle typeof(X) expression for first argument
-        if (arguments[0].Expression is not TypeOfExpressionSyntax typeOfExpression)
-            return null;
-
-        // Get the type info from the typeof expression
-        var typeInfo = semanticModel.GetTypeInfo(typeOfExpression.Type);
-        if (typeInfo.Type == null)
-            return null;
-
-        var nodeType = typeInfo.Type.ToDisplayString();
-
-        // Get the node path (second parameter)
-        if (semanticModel.GetConstantValue(arguments[1].Expression).Value is not string nodePath)
-            return null;
-
-        // Get caching option (third parameter)
+        // Get caching option (optional second parameter)
         var isCached = false;
-        if (arguments.Count > 2)
+        if (nodeAttribute.ArgumentList.Arguments.Count > 1)
         {
-            var isCachedOpt = semanticModel.GetConstantValue(arguments[2].Expression).Value;
-            if (isCachedOpt is not bool x)
-                return null;
-            isCached = x;
+            var isCachedOpt = semanticModel
+                .GetConstantValue(nodeAttribute.ArgumentList.Arguments[1].Expression)
+                .Value;
+            if (isCachedOpt is bool x)
+                isCached = x;
         }
 
-        return new GetterToGenerate(nodeType, nodePath, isCached, classSymbol.ToDisplayString());
+        // Get property type and name
+        var propertyName = propertySyntax.Identifier.Text;
+
+        // Get access modifier
+        var accessModifier = "private"; // Default
+        if (propertySyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
+            accessModifier = "public";
+        else if (propertySyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.ProtectedKeyword)))
+            accessModifier = "protected";
+        else if (propertySyntax.Modifiers.Any(m => m.IsKind(SyntaxKind.InternalKeyword)))
+            accessModifier = "internal";
+
+        // Get fully qualified type name
+        var typeInfo = semanticModel.GetTypeInfo(propertySyntax.Type);
+        var propertyType = typeInfo.Type?.ToDisplayString() ?? propertySyntax.Type.ToString();
+
+        return new PropertyGetterToGenerate(
+            propertyName,
+            propertyType,
+            nodePath,
+            isCached,
+            classSymbol.ToDisplayString(),
+            accessModifier
+        );
+    }
+
+    private static bool IsNodeAttribute(SemanticModel semanticModel, AttributeSyntax attribute)
+    {
+        if (semanticModel.GetSymbolInfo(attribute).Symbol is not IMethodSymbol attributeSymbol)
+            return false;
+
+        var fullName = attributeSymbol.ContainingType.ToDisplayString();
+        return fullName == "NodeGetterGenerators.NodeAttribute";
     }
 }
 
@@ -151,16 +153,14 @@ namespace NodeGetterGenerators
         }
     }
 
-    [System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]
-    public class GenerateNodeGetterAttribute : System.Attribute
+    [System.AttributeUsage(System.AttributeTargets.Property)]
+    public class NodeAttribute : System.Attribute
     {
-        public System.Type NodeType { get; }
         public string NodePath { get; }
         public bool Cache { get; }
         
-        public GenerateNodeGetterAttribute(System.Type nodeType, string nodePath, bool cache=false)
+        public NodeAttribute(string nodePath, bool cache = false)
         {
-            NodeType = nodeType;
             NodePath = nodePath;
             Cache = cache;
         }
@@ -184,25 +184,28 @@ namespace NodeGetterGenerators
         return sb.ToString();
     }
 
-    public static string GenerateGetterMethod(GetterToGenerate getterToGenerate)
+    public static string GeneratePropertyGetter(PropertyGetterToGenerate getterToGenerate)
     {
-        if (getterToGenerate.IsCached)
-            return $"""
-                        private {getterToGenerate.NodeType}? _cache{getterToGenerate.MethodName};
-                        private {getterToGenerate.NodeType} {getterToGenerate.MethodName}() =>
-                            _cache{getterToGenerate.MethodName} ??=
-                                GetNode<{getterToGenerate.NodeType}>("{getterToGenerate.NodePath}") 
-                                ?? throw new KeyNotFoundException(
-                                    "Could not find node '{getterToGenerate.NodePath}' of type '{getterToGenerate.NodeType}'"
-                                );
-                """;
-        return $"""
-                    private {getterToGenerate.NodeType} {getterToGenerate.MethodName}() =>
-                        GetNode<{getterToGenerate.NodeType}>("{getterToGenerate.NodePath}") 
+        // Use the fully qualified type to ensure it's properly resolved
+        var fullTypeName = getterToGenerate.PropertyType;
+
+        return getterToGenerate.IsCached
+            ? $"""
+                    private {fullTypeName}? {getterToGenerate.BackingFieldName};
+                    {getterToGenerate.AccessModifier} partial {fullTypeName} {getterToGenerate.PropertyName} => 
+                        {getterToGenerate.BackingFieldName} ??= 
+                            GetNode<{fullTypeName}>("{getterToGenerate.NodePath}") 
+                            ?? throw new KeyNotFoundException(
+                                "Could not find node '{getterToGenerate.NodePath}' of type '{fullTypeName}'"
+                            );
+                """
+            : $"""
+                    {getterToGenerate.AccessModifier} partial {fullTypeName} {getterToGenerate.PropertyName} => 
+                        GetNode<{fullTypeName}>("{getterToGenerate.NodePath}") 
                         ?? throw new KeyNotFoundException(
-                            "Could not find node '{getterToGenerate.NodePath}' of type '{getterToGenerate.NodeType}'"
+                            "Could not find node '{getterToGenerate.NodePath}' of type '{fullTypeName}'"
                         );
-            """;
+                """;
     }
 
     private static string GetNamespace(string fullClassName)
@@ -226,7 +229,7 @@ public class NodeGetterGenerator : IIncrementalGenerator
         // Register the attribute source
         context.RegisterPostInitializationOutput(static ctx =>
             ctx.AddSource(
-                "GenerateNodeGetterAttribute.g.cs",
+                "NodeAttributes.g.cs",
                 SourceText.From(NodeGetterSourceGenerationHelper.Attribute, Encoding.UTF8)
             )
         );
@@ -256,11 +259,14 @@ public class NodeGetterGenerator : IIncrementalGenerator
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node) =>
-        node is ClassDeclarationSyntax { AttributeLists.Count: > 0 };
+        node
+            is ClassDeclarationSyntax { AttributeLists.Count: > 0 }
+                or ClassDeclarationSyntax { Members: { Count: > 0 } };
 
-    private static (GetterToGenerate[], GenerationVerification?) GetSemanticTargetForGeneration(
-        GeneratorSyntaxContext context
-    )
+    private static (
+        PropertyGetterToGenerate[],
+        GenerationVerification?
+    ) GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
         // We know the node is a ClassDeclarationSyntax thanks to IsSyntaxTargetForGeneration
         var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
@@ -274,26 +280,35 @@ public class NodeGetterGenerator : IIncrementalGenerator
             return ([], null);
         }
 
-        // Loop through all attributes on the class
-        var result = new List<GetterToGenerate>();
+        // Find verify node attribute
         GenerationVerification? verifier = null;
         foreach (var attributeListSyntax in classDeclarationSyntax.AttributeLists)
         {
             foreach (var attributeSyntax in attributeListSyntax.Attributes)
             {
-                var getter = GetterToGenerate.FromAttribute(
-                    semanticModel,
-                    classSymbol,
-                    attributeSyntax
-                );
                 verifier ??= GenerationVerification.FromAttribute(
                     semanticModel,
                     classSymbol,
                     attributeSyntax
                 );
-                if (getter != null)
-                    result.Add(getter.Value);
             }
+        }
+
+        // Find properties with Node attribute
+        var result = new List<PropertyGetterToGenerate>();
+        foreach (var member in classDeclarationSyntax.Members)
+        {
+            if (member is not PropertyDeclarationSyntax propertySyntax)
+                continue;
+
+            var propertyGetter = PropertyGetterToGenerate.FromPropertyNode(
+                semanticModel,
+                classSymbol,
+                propertySyntax
+            );
+
+            if (propertyGetter != null)
+                result.Add(propertyGetter.Value);
         }
 
         return (result.ToArray(), verifier);
@@ -310,7 +325,7 @@ public class NodeGetterGenerator : IIncrementalGenerator
 
     private static void Execute(
         (
-            (GetterToGenerate[], GenerationVerification?),
+            (PropertyGetterToGenerate[], GenerationVerification?),
             ImmutableDictionary<string, TscnNode[]>
         ) source,
         SourceProductionContext context
@@ -320,11 +335,14 @@ public class NodeGetterGenerator : IIncrementalGenerator
         var generationVerification = source.Item1.Item2;
         var nodeInfoMap = source.Item2;
 
+        if (gettersToGenerate.Length == 0)
+            return;
+
         var targetClassName = gettersToGenerate[0].ClassName;
         var methodCodes = new List<string>();
         foreach (var getterToGenerate in gettersToGenerate)
         {
-            var code = NodeGetterSourceGenerationHelper.GenerateGetterMethod(getterToGenerate);
+            var code = NodeGetterSourceGenerationHelper.GeneratePropertyGetter(getterToGenerate);
             methodCodes.Add(code);
 
             // Verify nodes
@@ -333,6 +351,9 @@ public class NodeGetterGenerator : IIncrementalGenerator
             var verification = generationVerification.Value;
 
             var verificationNameSplit = verification.NodeName.Split('/');
+
+            if (!nodeInfoMap.ContainsKey(verificationNameSplit.First()))
+                continue;
 
             var nodes = nodeInfoMap[verificationNameSplit.First()];
             var getterFullNodePath = string.Join(

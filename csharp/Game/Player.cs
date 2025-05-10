@@ -3,12 +3,18 @@ using NodeGetterGenerators;
 
 namespace tutorial;
 
-[GenerateNodeGetter(typeof(CollisionShape2D), "CollisionShape2D")]
-[GenerateNodeGetter(typeof(PlayerAnimatedSprite2d), "AnimatedSprite2D")]
-[GenerateNodeGetter(typeof(GpuParticles2D), "GPUParticles2D")]
 [VerifyNodeGetters("Player")]
 public partial class Player : Area2D
 {
+    [Node("CollisionShape2D")]
+    private partial CollisionShape2D CollisionShape2D { get; }
+
+    [Node("AnimatedSprite2D")]
+    private partial PlayerAnimatedSprite2d PlayerAnimatedSprite { get; }
+
+    [Node("GPUParticles2D")]
+    private partial GpuParticles2D GpuParticles2D { get; }
+
     [Export]
     public int Speed { get; set; } = 400;
 
@@ -29,8 +35,8 @@ public partial class Player : Area2D
     {
         Position = position;
         Show();
-        GetNodeCollisionShape2D().SetDeferred(CollisionShape2D.PropertyName.Disabled, false);
-        GetNodeGPUParticles2D().Restart();
+        CollisionShape2D.SetDeferred(CollisionShape2D.PropertyName.Disabled, false);
+        GpuParticles2D.Restart();
     }
 
     private static Vector2 GetMovementVector()
@@ -53,9 +59,9 @@ public partial class Player : Area2D
 
     private void SetSpriteVelocity(Vector2 velocity)
     {
-        var animatedSprite = GetNodeAnimatedSprite2D();
+        var animatedSprite = PlayerAnimatedSprite;
         animatedSprite.SetVelocity(velocity);
-        GetNodeGPUParticles2D().Emitting = animatedSprite.IsPlaying();
+        GpuParticles2D.Emitting = animatedSprite.IsPlaying();
     }
 
     public override void _Process(double delta)
@@ -78,6 +84,6 @@ public partial class Player : Area2D
     {
         Hide();
         EmitSignal(SignalName.Hit);
-        GetNodeCollisionShape2D().SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
+        CollisionShape2D.SetDeferred(CollisionShape2D.PropertyName.Disabled, true);
     }
 }

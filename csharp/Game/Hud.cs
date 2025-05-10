@@ -6,54 +6,61 @@ using Timer = Godot.Timer;
 
 namespace tutorial;
 
-[GenerateNodeGetter(typeof(Label), "Message", cache: true)]
-[GenerateNodeGetter(typeof(Label), "ScoreLabel")]
-[GenerateNodeGetter(typeof(Button), "StartButton")]
-[GenerateNodeGetter(typeof(Timer), "MessageTimer")]
 [VerifyNodeGetters("HUD")]
 public partial class Hud : CanvasLayer
 {
+    [Node("Message", cache: true)]
+    private partial Label MessageLabel { get; }
+
+    [Node("ScoreLabel")]
+    private partial Label ScoreLabel { get; }
+
+    [Node("StartButton")]
+    private partial Button StartButton { get; }
+
+    [Node("MessageTimer")]
+    private partial Timer MessageTimer { get; }
+
     [Signal]
     public delegate void StartGameEventHandler();
 
     public override void _Ready()
     {
         base._Ready();
-        GetNodeStartButton().Pressed += OnStartButtonPressed;
-        GetNodeMessageTimer().Timeout += OnMessageTimerTimeout;
+        StartButton.Pressed += OnStartButtonPressed;
+        MessageTimer.Timeout += OnMessageTimerTimeout;
     }
 
     public void OnStartButtonPressed()
     {
-        GetNodeStartButton().Hide();
+        StartButton.Hide();
         EmitSignal(SignalName.StartGame);
     }
 
     public void OnMessageTimerTimeout()
     {
-        GetNodeMessage().Hide();
+        MessageLabel.Hide();
     }
 
     public void ShowMessage(string text, bool fade)
     {
-        var message = GetNodeMessage();
-        message.Text = text;
-        message.Show();
+        MessageLabel.Text = text;
+        MessageLabel.Show();
         if (fade)
-            GetNodeMessageTimer().Start();
+            MessageTimer.Start();
     }
 
     public void UpdateScore(float score)
     {
-        GetNodeScoreLabel().Text = score.ToString(CultureInfo.CurrentCulture);
+        ScoreLabel.Text = score.ToString(CultureInfo.CurrentCulture);
     }
 
     public async Task ShowGameOver()
     {
         ShowMessage("Game Over", true);
-        await ToSignal(GetNodeMessageTimer(), Timer.SignalName.Timeout);
+        await ToSignal(MessageTimer, Timer.SignalName.Timeout);
         ShowMessage("Dodge The Creeps!", false);
         await ToSignal(GetTree().CreateTimer(1.0), Timer.SignalName.Timeout);
-        GetNodeStartButton().Show();
+        StartButton.Show();
     }
 }

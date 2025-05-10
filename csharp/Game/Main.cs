@@ -4,21 +4,41 @@ using NodeGetterGenerators;
 
 namespace tutorial;
 
-[GenerateNodeGetter(typeof(Player), "Player")]
-[GenerateNodeGetter(typeof(Timer), "StartTimer")]
-[GenerateNodeGetter(typeof(Timer), "MobSpawnTimer")]
-[GenerateNodeGetter(typeof(Timer), "MobSpeedTimer")]
-[GenerateNodeGetter(typeof(Timer), "ScoreTimer")]
-[GenerateNodeGetter(typeof(Hud), "HUD")]
-[GenerateNodeGetter(typeof(Marker2D), "StartPosition")]
-[GenerateNodeGetter(typeof(PathFollow2D), "MobPath/MobSpawnLocation")]
-[GenerateNodeGetter(typeof(AudioStreamPlayer2D), "Music")]
-[GenerateNodeGetter(typeof(AudioStreamPlayer2D), "DeathSound")]
 [VerifyNodeGetters("Main")]
 public partial class Main : Node
 {
     [Export]
     public PackedScene? MobScene { get; set; }
+
+    [Node("Player")]
+    private partial Player Player { get; }
+
+    [Node("StartTimer")]
+    private partial Timer StartTimer { get; }
+
+    [Node("MobSpawnTimer")]
+    private partial Timer MobSpawnTimer { get; }
+
+    [Node("MobSpeedTimer")]
+    private partial Timer MobSpeedTimer { get; }
+
+    [Node("ScoreTimer")]
+    private partial Timer ScoreTimer { get; }
+
+    [Node("HUD")]
+    private partial Hud HUD { get; }
+
+    [Node("StartPosition")]
+    private partial Marker2D StartPosition { get; }
+
+    [Node("MobPath/MobSpawnLocation")]
+    private partial PathFollow2D MobPathMobSpawnLocation { get; }
+
+    [Node("Music")]
+    private partial AudioStreamPlayer2D Music { get; }
+
+    [Node("DeathSound")]
+    private partial AudioStreamPlayer2D DeathSound { get; }
 
     private int _score;
     private int _mobSpeed = 100;
@@ -26,36 +46,36 @@ public partial class Main : Node
     public override void _Ready()
     {
         base._Ready();
-        GetNodeMobSpawnTimer().Timeout += OnMobSpawnTimerTimeout;
-        GetNodeMobSpeedTimer().Timeout += OnMobSpeedTimerTimeout;
-        GetNodeScoreTimer().Timeout += OnScoreTimerTimeout;
-        GetNodeStartTimer().Timeout += OnStartTimerTimeout;
-        GetNodePlayer().Hit += OnPlayerHit;
-        GetNodeHUD().StartGame += OnHudStartGame;
-        GetNodeMobSpawnTimer().Start(3);
+        MobSpawnTimer.Timeout += OnMobSpawnTimerTimeout;
+        MobSpeedTimer.Timeout += OnMobSpeedTimerTimeout;
+        ScoreTimer.Timeout += OnScoreTimerTimeout;
+        StartTimer.Timeout += OnStartTimerTimeout;
+        Player.Hit += OnPlayerHit;
+        HUD.StartGame += OnHudStartGame;
+        MobSpawnTimer.Start(3);
     }
 
     private void NewGame()
     {
         _score = 0;
         _mobSpeed = 100;
-        GetNodePlayer().Start(GetNodeStartPosition().Position);
-        GetNodeStartTimer().Start();
-        GetNodeHUD().UpdateScore(_score);
-        GetNodeHUD().ShowMessage("Get Ready", fade: true);
-        GetNodeMusic().Play();
+        Player.Start(StartPosition.Position);
+        StartTimer.Start();
+        HUD.UpdateScore(_score);
+        HUD.ShowMessage("Get Ready", fade: true);
+        Music.Play();
         GetTree().CallGroup(Mob.MobGroup, Node.MethodName.QueueFree);
     }
 
     private async Task GameOver()
     {
         _mobSpeed = 100;
-        GetNodeScoreTimer().Stop();
-        GetNodeMobSpawnTimer().Start(3);
-        GetNodeMobSpeedTimer().Stop();
-        GetNodeMusic().Stop();
-        GetNodeDeathSound().Play();
-        await GetNodeHUD().ShowGameOver();
+        ScoreTimer.Stop();
+        MobSpawnTimer.Start(3);
+        MobSpeedTimer.Stop();
+        Music.Stop();
+        DeathSound.Play();
+        await HUD.ShowGameOver();
     }
 
     private async void OnPlayerHit()
@@ -72,7 +92,7 @@ public partial class Main : Node
         }
 
         var mob = MobScene.Instantiate<Mob>();
-        var mobSpawnLocation = GetNodeMobPathMobSpawnLocation();
+        var mobSpawnLocation = MobPathMobSpawnLocation;
         mobSpawnLocation.ProgressRatio = GD.Randf();
         mob.Position = mobSpawnLocation.Position;
 
@@ -89,20 +109,20 @@ public partial class Main : Node
     private void OnMobSpeedTimerTimeout()
     {
         _mobSpeed += 10;
-        GetNodeMobSpawnTimer().WaitTime = 100.0 / _mobSpeed;
+        MobSpawnTimer.WaitTime = 100.0 / _mobSpeed;
     }
 
     private void OnScoreTimerTimeout()
     {
         _score += 1;
-        GetNodeHUD().UpdateScore(_score);
+        HUD.UpdateScore(_score);
     }
 
     private void OnStartTimerTimeout()
     {
-        GetNodeMobSpeedTimer().Start();
-        GetNodeMobSpawnTimer().Start(1);
-        GetNodeScoreTimer().Start();
+        MobSpeedTimer.Start();
+        MobSpawnTimer.Start(1);
+        ScoreTimer.Start();
     }
 
     private void OnHudStartGame()
