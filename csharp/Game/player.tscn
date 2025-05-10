@@ -1,0 +1,90 @@
+[gd_scene load_steps=14 format=3 uid="uid://ds3fxtyugq0v0"]
+
+[ext_resource type="Texture2D" uid="uid://b6ova0cngxia6" path="res://dodge_the_creeps_2d_assets/art/playerGrey_up1.png" id="1_hqtel"]
+[ext_resource type="Script" uid="uid://dmmh2bn8kg42t" path="res://Player.cs" id="1_sweqy"]
+[ext_resource type="Texture2D" uid="uid://brf8822573r7u" path="res://dodge_the_creeps_2d_assets/art/playerGrey_up2.png" id="2_sweqy"]
+[ext_resource type="Texture2D" uid="uid://cqrly7aqu5f2a" path="res://dodge_the_creeps_2d_assets/art/playerGrey_walk1.png" id="3_2hs0m"]
+[ext_resource type="Texture2D" uid="uid://cibelrw63ducs" path="res://dodge_the_creeps_2d_assets/art/playerGrey_walk2.png" id="4_1jxqw"]
+[ext_resource type="Script" uid="uid://cdoj31c5jxwk0" path="res://PlayerAnimatedSprite2d.cs" id="6_2hs0m"]
+
+[sub_resource type="Gradient" id="Gradient_sweqy"]
+offsets = PackedFloat32Array(0.446108, 0.550898)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_2hs0m"]
+gradient = SubResource("Gradient_sweqy")
+width = 32
+height = 32
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[sub_resource type="Curve" id="Curve_sweqy"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.98329, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_2hs0m"]
+curve = SubResource("Curve_sweqy")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sweqy"]
+particle_flag_disable_z = true
+radial_velocity_min = 9.99998
+radial_velocity_max = 20.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.9
+scale_max = 1.2
+alpha_curve = SubResource("CurveTexture_2hs0m")
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dw050"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_hqtel")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_sweqy")
+}],
+"loop": true,
+"name": &"up",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_2hs0m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_1jxqw")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_b26j0"]
+radius = 26.0
+height = 64.0
+
+[node name="Player" type="Area2D"]
+position = Vector2(1, 0)
+script = ExtResource("1_sweqy")
+
+[node name="GPUParticles2D" type="GPUParticles2D" parent="."]
+scale = Vector2(0.5, 0.5)
+amount = 4
+texture = SubResource("GradientTexture2D_2hs0m")
+lifetime = 0.5
+process_material = SubResource("ParticleProcessMaterial_sweqy")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, 0)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_dw050")
+animation = &"walk"
+frame = 1
+frame_progress = 0.892029
+script = ExtResource("6_2hs0m")
+
+[node name="Node" type="Node" parent="AnimatedSprite2D"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_b26j0")
+disabled = true

@@ -1,0 +1,13 @@
+[package]
+name = "tutorial_rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+convert_case = "0.8.0"
+godot = { git = "https://github.com/godot-rust/gdext", rev="a752851" }
+paste = "1.0.15"
+rand = "0.9.0"
+
+[lib]
+crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.

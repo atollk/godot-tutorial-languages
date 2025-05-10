@@ -1,0 +1,20 @@
+<Project Sdk="Godot.NET.Sdk/4.4.1">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <Content Include=".csharpierrc.yaml"/>
+        <AdditionalFiles Include="*.tscn" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Verify.XUnit" Version="14.7.0"/>
+        <PackageReference Include="Verify.SourceGenerators" Version="1.2.0"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\SourceGenerators\SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    </ItemGroup>
+</Project>

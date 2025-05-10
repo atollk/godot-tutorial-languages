@@ -1,0 +1,27 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tutorial", "Game\tutorial.csproj", "{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SourceGenerators", "SourceGenerators\SourceGenerators.csproj", "{20C5663E-43AE-45F9-854E-421DC97A9E18}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+	Debug|Any CPU = Debug|Any CPU
+	ExportDebug|Any CPU = ExportDebug|Any CPU
+	ExportRelease|Any CPU = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{3B0FB9FF-FB3D-43C8-9BE6-187E669DE43F}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{20C5663E-43AE-45F9-854E-421DC97A9E18}.ExportRelease|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+EndGlobal

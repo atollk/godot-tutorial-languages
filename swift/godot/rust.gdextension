@@ -1,0 +1,12 @@
+[configuration]
+entry_symbol = "swift_entry_point"
+compatibility_minimum = 4.2
+reloadable = true
+
+[libraries]
+linux.debug.x86_64   =   "res://../swift/.build/x86_64-unknown-linux-gnu/debug/libtutorial.so"
+linux.release.x86_64 =   "res://../swift/.build/x86_64-unknown-linux-gnu/release/libtutorial.so"
+
+[dependencies]
+linux.debug.x86_64   =   {"res://../swift/.build/x86_64-unknown-linux-gnu/debug/libSwiftGodot.so": ""}
+linux.release.x86_64 =   {"res://../swift/.build/x86_64-unknown-linux-gnu/release/libSwiftGodot.so": ""}
